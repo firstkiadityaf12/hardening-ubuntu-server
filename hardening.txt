@@ -1,0 +1,184 @@
+Hardening Ubuntu Server 18.04
+sudo apt install net-tool
+ifconfig
++==============================================+
+# OpenSSH $sudo apt install openssh-server
+  $sudo ufw allow ssh
+  1.terminal $sudo nano /etc/ssh/sshd_config
+  2.edit PasswordAuthentication no
+  3.PermitEmptyPassword no
+  4.PermitRootLogin no
+  5.ClientAliveInterval 180 second && ClientAliveCountMax 3
+  6.AllowUsers [name] [name]
+  7.MaxAuthTries 3 (-number of failed attempt) && MaxSessions 3
+  8.kemudian sudo systemctl restart sshd
+  9. non sudo user $sudo useradd username $sudo usermod -aG sudo <username> $su — <username>
+	+=======+===========+
+	| first	| firstkode |
+	+=======+===========+
+  10.AllowAgentForwading no && AllowTcpForwading no && X11Forwarding no && TCPKeepAlive no
+  11.Permittunnel no
+AllowUsers *@203.0.113.1 *@203.0.113.2 *@192.0.2.0/24 *@172.16.*.1 (ubuntu server 20.04)
++==============================================+
+# libpam-cracklib
+  1.sudo apt install libpam-cracklib
+  2.sudo nano /etc/pam.d/common-password
+  3.edit password	requisite	pam-cracklib.so
+	ucredit=-1 : A minimum of one upper case
+	lcredit=-1 : A minimum of one lower case
+	dcredit=-1 : A minimum of least one digit
+	ocredit=-1 : A minimum of one special character
+	minlen=15 : A minimum of 15 characters.
+	retry=3 : Prompt user at most 3 times before returning an error. The default is 1.
+	minlen=8 : A minimum of 15 characters.
+	difok=3 : The amount of character changes in the new password that differentiate it from the old password.
+password requisite pam_cracklib.so retry=3 minlen=15 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1
+For password history first we need to create a new file for pam_unix to store old passwords (hashed of course). Without this password changes will fail.
+touch /etc/security/opasswd
+chown root:root /etc/security/opasswd
+chmod 600 /etc/security/opasswd
+Add the ‘remeber=15‘ to the end of the pam_unix line and your done, at least for now. Both lines should look like this:
++==============================================+
+# ftp server --version vsftpd
+  - sudo su apt -y install vsftpd $nano /etc/vsftpd.conf ini yang belum dihardening
+	write_enable=YES
+	anonymous_enable=YES
+	anon_upload_enable=YES
+	anon_mkdir_write_enable=YES
+	-/etc/init.d/vsftpd restart
++==============================================+
+# Fail2ban 
+  1.$apt-get install fail2ban
+  2.setelah itu melakukan configurasi
+  3.nano /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+	ignoreip = 127.0.0.1/8 {ipaddress}
+	bantime  = 600 dalam second
+	maxretry = 3
+	findtime = 60
+  4.$service fail2ban restart, how to see iptables -S
+	nano /etc/fail2ban/jail.local
+	# Block yang mencoba login gagal SSH sebanyak 3 untuk waktu 10 menit (600 - sec.)
+	#=====SSH=====#
+	[ssh]
+	enable = true
+	port = ssh
+	filter = sshd
+	logpath = /var/log/auth.log
+	maxretry = 3
+	bantime = 600
+	ignoreip = (alamat ip yang diizinkan)
+	#=====APACHE=====#
+	[apache]
+	enable = true
+	port = http, https
+	filter = apache-auth
+	logpath = /var/log/httpd/error.log
+	maxretry = 5
+	bantime = 600
+	
+	[apache-overflows]
+	enable = true
+	port = http, https
+	filter = apache-overflows
+	logpath = /var/log/httpd/error.log
+	maxretry = 5
+	bantime = 600
+	
+	[apache-noscript]
+	enable = true
+	port = http, https
+	filter = apache-noscript
+	logpath = /var/log/httpd/error.log
+	maxretry = 5
+	bantime = 600
+	
+	[apache-badbots]
+	enable = true
+	port = http, https
+	filter = apache-badbots
+	logpath = /var/log/httpd/error.log
+	maxretry = 5
+	bantime = 600
++==============================================+
+# Apache2
+  $sudo nano /var/www/your_domain/index.html
+  #nano /etc/apache2/conf-enable/security.conf
+  #nano /etc/apache2/apache2.conf
+  HARDENING APACHE VIRTUAL HOST
+  1.buka file /etc/apache2/sites-available/{namafilekonfigurasi}
+  2.nano /etc/apache2/sites-available/{namafilekonfigurasi}
+  3.edit dan tambahkan tujuan menonaktifkan directory listing apache virtual host
+	<Directory /var/www/{public_html}==file yg digunakan html>
+      		Options -Indexes
+	</Directory>
+  HARDENING FILE .HTACCESS
+  1.nano .htaccess
+  2.edit di drestory listing (Options -Indexes -FollowSymLinks)
+	$nano /etc/apache/apache2.conf
+	menambahkan Option -Indexes -FollowSymLinks di bagian directory /var/www/temp
+    	atau
+	nano /etc/var/www/html/temp/.htaccess
+  3.sudo systemctl restart apache2 atau /etc/init.d/apache2 restart
+  ----------------------------------------------
+  nano /etc/apache2/conf-enabled/security.conf
+	*mengubah ServerSignature off untuk menyembunyikan versi apache
++==============================================+
+# PHP
+  1.#nano /etc/php/7.0/apache2/php.ini
+  2.tambahkan allow_url_include = Off
+  3.$sudo service apache2 restart
++==============================================+
+# Mengganti password default
+  1. passwd {username}
++==============================================+
+# Query form SQLInjection
+  login-form
+  1.
++==============================================+
+# Kill Services port
+  tujuan kill services yang harusnya tidak lebih dari ketentuanny
+  pilihan :
+  netstat -tulpn untuk melihat service
+  $sudo kill -9 `sudo lsof -t -i:3002`
+  $sudo kill -9 `sudo lsof -t -i:{PORT_NUMBER}`
+  $sudo kill -9 $(sudo lsof -t -i:3000)
+  $lsof -t -i:3000 6279=>port
+  $sudo kill -9 6279
++==============================================+
+# untuk sniffing server
+  sudo ettercap -T -S -i namawifi -M arp:remote /ipsendiri// /ipserver//
++==============================================+
+Clam AntiVirus adalah perangkat lunak perangkat lunak antivirus gratis, lintas platform dan open-source yang dapat mendeteksi berbagai jenis perangkat lunak berbahaya, termasuk virus. Salah satu kegunaan utamanya adalah pada server email sebagai pemindai virus email sisi server.
+
+installasi menggunakan command “sudo apt install clamav clamav-daemon -y”. setelah itu berhentikan service untuk update
+sudo systemctl stop clamav-freshclam
+sudo freshclam
+sudo systemctl start clamav-freshclam
+sudo systemctl enable clamav-freshclam
+sudo systemctl status clamav-freshclam
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

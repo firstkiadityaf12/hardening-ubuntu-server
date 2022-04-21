@@ -1,0 +1,20 @@
+installing snort 
+melihat versi $snort -v
+untuk menambhakn rules nids $nano /etc/snort/rules/local.rules
++=====CONTOH RULES=====+
+1. action protocol address port direction address port (rule option)
+2. log tcp any any -> 192.168.1.0/24 !6000:6010
+3. alert tcp any any -> 192.168.0.100 23 (msg: "Ada yang telnet ke mesin!"; sid:1000001;)
+/etc/init.d/snort restart
+referensi: https://lms.onnocenter.or.id/wiki/index.php/SNORT-RULES:_Coba_Menulis_Rules_untuk_pemula#Rule_Sederhana
+
++=====RULES OPTION=====+
+
+
+
++=====ERROR SNORT=====+
+if error journalctl -xe
+cat sys/class/net/network/address (copy) 08:00:27:b1:75:c0
+nano /etc/sysconfig/network-scripts/ifcfg-
+
+tes snort -c/etc/snort/snort.conf -i (namawifi)=enp0s3
